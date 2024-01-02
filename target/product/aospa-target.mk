@@ -15,12 +15,19 @@
 # Enable support for APEX updates
 $(call inherit-product, $(SRC_TARGET_DIR)/product/updatable_apex.mk)
 
+# Enable allowlist for some aosp packages that should not be scanned in a "stopped" state
+# Some CTS test case failed after enabling feature config_stopSystemPackagesByDefault
+PRODUCT_PACKAGES += initial-package-stopped-states-aosp.xml
+
 # Abstruct
 PRODUCT_PACKAGES += \
     Abstruct
 
 # AOSPA Version.
 $(call inherit-product, vendor/aospa/target/product/version.mk)
+
+# AOSPA private configuration - optional.
+$(call inherit-product-if-exists, vendor/aospa-priv/target/product/aospa-priv-target.mk)
 
 # APNs
 ifneq ($(TARGET_NO_TELEPHONY), true)
@@ -40,10 +47,6 @@ $(call inherit-product, vendor/aospa/bootanimation/bootanimation.mk)
 PRODUCT_PACKAGES += \
     GoogleCameraGo
 
-# Charger
-PRODUCT_SYSTEM_EXT_PROPERTIES += \
-    ro.charger.enable_suspend=1
-
 # curl
 PRODUCT_PACKAGES += \
     curl
@@ -57,6 +60,7 @@ PRODUCT_SYSTEM_EXT_PROPERTIES += \
 DONT_DEXPREOPT_PREBUILTS := true
 
 PRODUCT_DEXPREOPT_SPEED_APPS += \
+    Launcher3QuickStep \
     ParanoidSystemUI
 
 PRODUCT_PROPERTY_OVERRIDES += \
@@ -65,8 +69,7 @@ PRODUCT_PROPERTY_OVERRIDES += \
 # Display
 PRODUCT_SYSTEM_EXT_PROPERTIES += \
     debug.sf.frame_rate_multiple_threshold=60 \
-    ro.launcher.blur.appLaunch=0 \
-    ro.sf.use_latest_hwc_vsync_period=0
+    ro.surface_flinger.enable_frame_rate_override=false
 
 # EGL - Blobcache configuration
 PRODUCT_SYSTEM_EXT_PROPERTIES += \
@@ -124,6 +127,9 @@ PRODUCT_MINIMIZE_JAVA_DEBUG_INFO := true
 SYSTEM_OPTIMIZE_JAVA := true
 SYSTEMUI_OPTIMIZE_JAVA := true
 
+# Microsoft
+$(call inherit-product, vendor/aospa/prebuilt/microsoft/packages.mk)
+
 # MTE
 PRODUCT_SYSTEM_EXT_PROPERTIES += \
     persist.arm64.memtag.system_server=off
@@ -148,11 +154,6 @@ PRODUCT_PACKAGES += \
     ParanoidSystemUI \
     ParanoidThemePicker
 
-# Paranoid Hub (OTA)
-ifneq ($(filter STABLE BETA,$(AOSPA_BUILDTYPE)),)
-PRODUCT_PACKAGES += ParanoidHub
-endif
-
 # Paranoid Sense
 PRODUCT_PACKAGES += \
     ParanoidSense
@@ -167,11 +168,12 @@ PRODUCT_SYSTEM_EXT_PROPERTIES += \
 # Permissions
 PRODUCT_COPY_FILES += \
     vendor/aospa/target/config/permissions/default_permissions_com.google.android.deskclock.xml:$(TARGET_COPY_OUT_PRODUCT)/etc/default-permissions/default_permissions_com.google.android.deskclock.xml \
-    vendor/aospa/target/config/permissions/privapp-permissions-hotword.xml:$(TARGET_COPY_OUT_PRODUCT)/etc/permissions/privapp-permissions-hotword.xml
+    vendor/aospa/target/config/permissions/privapp-permissions-hotword.xml:$(TARGET_COPY_OUT_PRODUCT)/etc/permissions/privapp-permissions-hotword.xml \
+    vendor/aospa/target/config/permissions/org.lineageos.health.xml:$(TARGET_COPY_OUT_PRODUCT)/etc/permissions/org.lineageos.health.xml
 
 # Privapp-permissions
 PRODUCT_SYSTEM_EXT_PROPERTIES += \
-    ro.control_privapp_permissions?=enforce
+    ro.control_privapp_permissions?=log
 
 # Protobuf - Workaround for prebuilt Qualcomm HAL
 PRODUCT_PACKAGES += \
